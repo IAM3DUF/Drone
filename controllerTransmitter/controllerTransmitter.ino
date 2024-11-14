@@ -4,7 +4,7 @@
 #include <WiFi.h>
 
 //*************************************Potentiometer/Input Pin Globals**************************************
-
+//----------DO NOT USE PINS 6 7 8 9 10 OR 11
 //Roll - RY
 //Pitch - RX
 //Yaw - LY
@@ -12,17 +12,17 @@
 //Electromagnet - EM
 //Arming - ARM
 
-int greenLED = 23; //Was 23
-int redLED = 22; //Was 22
+int greenLED = 13; //Was 23
+int redLED = 12; //Was 22
 
-int ARM = 25;//Was 36
+int ARM = 36;//Was 36
 
 int LX = 34; //Was 34
-int LY = 35; //Was 35
+int LY = 39; //Was 35
 //int LB = 0;
 
-int RightX = 32; //Was 32
-int RY = 33; //Was 33
+int RightX = 35; //Was 32
+int RY = 32; //Was 33
 //int RB = 0;
 
 int EM = 0;
@@ -122,6 +122,7 @@ void loop() {
   //Get Roll, Pitch, Yaw, and Throttle values from potentiometers
   myData.roll = readStick(RY);
   Serial.print("Roll: ");
+  //Serial.println(analogRead(RY));
   Serial.println(myData.roll);
 
   myData.pitch = readStick(RightX);
@@ -130,6 +131,7 @@ void loop() {
 
   myData.yaw = readStick(LY);
   Serial.print("Yaw: ");
+  //Serial.println(analogRead(LY));
   Serial.println(myData.yaw);
 
   myData.throttle = readStick(LX);
@@ -164,7 +166,12 @@ int readStick(int pin){
 
   if(pin == LX){
     return value;
+
   }else{
+    if(pin == LY || pin == RY){
+      value=3000-value;
+    }
+    
     if(value<1470 && value>1420){
       return 1500;
     }
