@@ -19,13 +19,14 @@ int ARM = 36;//Was 36
 
 int LX = 34; //Was 34
 int LY = 39; //Was 35
-//int LB = 0;
+int LB = 16;
 
 int RightX = 35; //Was 32
 int RY = 32; //Was 33
-//int RB = 0;
+int RB = 14;
 
-int EM = 0;
+int EM = RB;
+int emCount=0;
 
 int throttleValue=1500;
 
@@ -70,11 +71,11 @@ void setup() {
   //*************************************Potentiometer/Input Pin Setup**************************************
   pinMode(LX, INPUT);
   pinMode(LY, INPUT);
-  //pinMode(LB, INPUT);
+  pinMode(LB, INPUT);
 
   pinMode(RightX, INPUT);
   pinMode(RY, INPUT);
-  //pinMode(RB, INPUT);
+  pinMode(RB, INPUT);
 
   pinMode(ARM, INPUT);
   pinMode(EM, INPUT);
@@ -140,11 +141,20 @@ void loop() {
   Serial.print("Throttle: ");
   Serial.println(myData.throttle);
 
-  //Read Electromagnet Enable value 
-  //myData.em_enable = digitalRead(EM);
+  //Read Electromagnet Enable value
+  
+  if(!(digitalRead(EM))){
+    if(emCount>=20){ 
+      myData.em_enable=!(myData.em_enable);
+      emCount=0;
+    }
+  }
   Serial.print("EM: ");
   Serial.println(myData.em_enable);
-  
+  emCount++;
+  if(emCount>20){
+    emCount=20;
+  }
   
   // Send message via ESP-NOW
   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));
