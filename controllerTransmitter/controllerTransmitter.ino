@@ -27,6 +27,8 @@ int RY = 32; //Was 33
 
 int EM = 0;
 
+int throttleValue=1500;
+
 //****************************************ESP NOW Transmitter Globals**************************************
 
 // REPLACE WITH YOUR RECEIVER MAC Address
@@ -154,10 +156,33 @@ void loop() {
 int convertRangeAnalog(int input) {
     int input_min = 0;
     int input_max = 4095;
-    int output_min = 1000; //Theoretical min is 885
-    int output_max = 2000; //Theoretical mas is 2115
+    int output_min = 1000;  // Desired min output
+    int output_max = 2000;  // Desired max output
 
-    int output = output_min + ((input - input_min) * (output_max - output_min)) / (input_max - input_min);
+    float input_mid = (input_max - input_min) / 2.0;  // Midpoint (2047.5 for joystick)
+    float slow_growth_zone = 0.7;  // Zone for slow growth (50% of full range)
+    float exponent_slow = 0.1;     // Reduced exponent for very slow initial curve
+    float exponent_fast = 1.0;     // Faster exponential growth outside the zone
+
+    // Normalize input to range -1 to 1
+    float normalizedInput = (float)(input - input_mid) / input_mid;
+
+    float transformedInput;
+    if (abs(normalizedInput) <= slow_growth_zone) {
+        // Slower-than-linear growth within the central 50% range
+        transformedInput = normalizedInput * pow(abs(normalizedInput) / slow_growth_zone, exponent_slow);
+    } else {
+        // Faster growth outside the central 50% range
+        transformedInput = (normalizedInput < 0 ? -1 : 1) *
+                           (slow_growth_zone + (1 - slow_growth_zone) * pow((abs(normalizedInput) - slow_growth_zone) / (1 - slow_growth_zone), exponent_fast));
+    }
+
+    // Remap transformed input (-1 to 1) to output range (1000 to 2000)
+    int output = output_min + (int)((transformedInput + 1) / 2 * (output_max - output_min));
+
+    // Clamp output to ensure it's within bounds
+    output = max(min(output, output_max), output_min);
+
     return output;
 }
 
@@ -165,14 +190,29 @@ int readStick(int pin){
   int value = convertRangeAnalog(analogRead(pin));
 
   if(pin == LX){
-    return value;
+    
+    if (value > 1600) {
+     int increment = (value - 1600) / 5; // Larger increment for higher values
+      throttleValue += increment;
+    } else if (value < 1400) {
+      int decrement = (1400 - value) / 5; // Larger decrement for lower values
+      throttleValue -= decrement;
+    }
+
+    if(throttleValue>2000){
+      throttleValue=2000;
+    }else if(throttleValue<1000){
+      throttleValue=1000;
+    }
+
+    return throttleValue;
 
   }else{
     if(pin == LY || pin == RY){
       value=3000-value;
     }
     
-    if(value<1470 && value>1420){
+    if(value<1580 && value>1420){
       return 1500;
     }
 
