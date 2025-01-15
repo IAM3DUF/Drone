@@ -1,0 +1,66 @@
+defaults nosave
+
+
+# version
+# Betaflight / STM32F405 (S405) 4.5.1 Jul 28 2024 / 05:09:33 (77d01ba3b) MSP API: 1.46
+# config rev: 6440ad8
+
+# start the command batch
+batch start
+
+# reset configuration to default settings
+defaults nosave
+
+board_name SPEEDYBEEF405MINI
+manufacturer_id SPBE
+mcu_id 002500183133470236333237
+signature 
+
+# feature
+feature INFLIGHT_ACC_CAL
+feature LED_STRIP
+feature OSD
+
+# aux
+aux 0 0 0 1700 2100 0 0
+aux 1 1 0 1700 2100 0 0
+
+# rxfail
+rxfail 3 a
+
+# master
+set acc_calibration = 14,7,14,1
+set max_check = 1990
+set bat_capacity = 2200
+set vbat_max_cell_voltage = 450
+set vbat_min_cell_voltage = 320
+set deadband = 5
+set pilot_name = hi
+
+profile 0
+
+# profile 0
+set profile_name = IAM3D
+set angle_limit = 25
+
+profile 1
+
+profile 2
+
+profile 3
+
+# restore original profile selection
+profile 0
+
+rateprofile 0
+
+rateprofile 1
+
+rateprofile 2
+
+rateprofile 3
+
+# restore original rateprofile selection
+rateprofile 0
+
+# save configuration

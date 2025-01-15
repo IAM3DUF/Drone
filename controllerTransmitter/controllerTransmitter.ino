@@ -32,6 +32,8 @@ int rollZero = 0;
 int pitchZero = 0;
 int yawZero = 0;
 
+int throttleZero = 0;
+
 //*************************************ESP-NOW Transmitter Globals**************************************
 uint8_t broadcastAddress[] = {0xd0, 0xef, 0x76, 0x58, 0xc8, 0x30};
 
@@ -91,6 +93,7 @@ void setup() {
     rollZero = analogRead(ROLL_PIN);
     pitchZero = analogRead(PITCH_PIN);
     yawZero = analogRead(YAW_PIN);
+    throttleZero = analogRead(THROTTLE_PIN);
 
     Serial.println("Calibration complete");
     Serial.print("Roll Zero: "); Serial.println(rollZero);
@@ -104,7 +107,7 @@ void loop() {
     controllerData.roll = mapStickInput(ROLL_PIN, rollZero);
     controllerData.pitch = 3000 - mapStickInput(PITCH_PIN, pitchZero); // Invert pitch
     controllerData.yaw = 3000 - mapStickInput(YAW_PIN, yawZero);       // Invert yaw
-    controllerData.throttle = mapThrottleInput(THROTTLE_PIN);
+    controllerData.throttle = mapThrottleInput(THROTTLE_PIN, throttleZero);
 
     if (!digitalRead(EM_PIN)) {
         if (electromagnetToggleCount >= 20) {
@@ -114,24 +117,24 @@ void loop() {
     }
     electromagnetToggleCount = min(electromagnetToggleCount + 1, 20);
 
-    // // Read value printing
-    // Serial.print("ARM: ");
-    // Serial.println(controllerData.arm);
+    // Read value printing
+    Serial.print("\nARM: ");
+    Serial.println(controllerData.arm);
 
-    // Serial.print("Roll: ");
-    // Serial.println(controllerData.roll);
+    Serial.print("Roll: ");
+    Serial.println(controllerData.roll);
 
-    // Serial.print("Pitch: ");
-    // Serial.println(controllerData.pitch);
+    Serial.print("Pitch: ");
+    Serial.println(controllerData.pitch);
 
-    // Serial.print("Yaw: ");
-    // Serial.println(controllerData.yaw);
+    Serial.print("Yaw: ");
+    Serial.println(controllerData.yaw);
 
-    // Serial.print("Throttle: ");
-    // Serial.println(controllerData.throttle);
+    Serial.print("Throttle: ");
+    Serial.println(controllerData.throttle);
 
-    // Serial.print("Electromagnet: ");
-    // Serial.println(controllerData.electromagnet);
+    Serial.print("Electromagnet: ");
+    Serial.println(controllerData.electromagnet);
 
     esp_now_send(broadcastAddress, (uint8_t *)&controllerData, sizeof(controllerData));
     delay(50);
@@ -154,15 +157,19 @@ int mapStickInput(int pin, int zeroValue) {
     }
 }
 
-int mapThrottleInput(int pin) {
+int mapThrottleInput(int pin, int zeroValue) {
     int value = analogRead(pin);
-    value = map(value, 0, 4095, 1000, 2000);
+    int defaultThrottle = 1625;
 
-    if (value > 1600) {
-        throttleValue = min(throttleValue + 50, 2000);
-    } else if (value < 1400) {
-        throttleValue = max(throttleValue - 50, 1000);
+    // Handle deadzone
+    if (abs(value - zeroValue) <= 25) {
+        return defaultThrottle; // Neutral position
+    }else{
+      // Map relative to zeroValue
+      if (value > zeroValue) {
+          return map(value, zeroValue, 4095, defaultThrottle, 2000); // Above center
+      } else {
+          return map(value, 0, zeroValue, 1000, defaultThrottle); // Below center
+      }
     }
-
-    return throttleValue;
 }
